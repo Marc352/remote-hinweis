@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Remote Support - Hinweissystem</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Inter Font -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'pulse-fast': 'pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'glow-pulse': 'glow 2s infinite alternate',
+          },
+          keyframes: {
+            glow: {
+              '0%': { boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)' },
+              '100%': { boxShadow: '0 0 35px rgba(239, 68, 68, 0.9)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Dynamic themes for Remote Display */
+    .theme-danger {
+      background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #450a0a 100%);
+      color: #ffffff;
+    }
+    .theme-danger-border {
+      border: 8px solid #f87171;
+      animation: dangerPulse 1.5s infinite;
+    }
+
+    .theme-warning {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #0f172a;
+    }
+    .theme-warning-border {
+      border: 8px solid #0f172a;
+      animation: warningPulse 1.5s infinite;
+    }
+
+    .theme-info {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #172554 100%);
+      color: #ffffff;
+    }
+    .theme-info-border {
+      border: 8px solid #60a5fa;
+      animation: infoPulse 1.5s infinite;
+    }
+
+    .theme-neon {
+      background: linear-gradient(135deg, #050505 0%, #0d131f 100%);
+      color: #4ade80;
+    }
+    .theme-neon-border {
+      border: 6px solid #22c55e;
+      box-shadow: 0 0 25px #22c55e, inset 0 0 25px #22c55e;
+      animation: neonPulse 1.8s infinite alternate;
+    }
+
+    .theme-slate {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+    }
+    .theme-slate-border {
+      border: 8px solid #38bdf8;
+      animation: slatePulse 2s infinite;
+    }
+
+    @keyframes dangerPulse {
+      0%, 100% { border-color: #f87171; box-shadow: 0 0 20px rgba(248, 113, 113, 0.6); }
+      50% { border-color: #ffffff; box-shadow: 0 0 40px rgba(255, 255, 255, 0.9); }
+    }
+    @keyframes warningPulse {
+      0%, 100% { border-color: #0f172a; box-shadow: 0 0 20px rgba(15, 23, 42, 0.4); }
+      50% { border-color: #78350f; box-shadow: 0 0 35px rgba(120, 53, 15, 0.8); }
+    }
+    @keyframes infoPulse {
+      0%, 100% { border-color: #60a5fa; box-shadow: 0 0 20px rgba(96, 165, 250, 0.6); }
+      50% { border-color: #ffffff; box-shadow: 0 0 40px rgba(255, 255, 255, 0.9); }
+    }
+    @keyframes neonPulse {
+      0% { border-color: #22c55e; box-shadow: 0 0 15px #22c55e; }
+      100% { border-color: #86efac; box-shadow: 0 0 40px #86efac, inset 0 0 20px #86efac; }
+    }
+    @keyframes slatePulse {
+      0%, 100% { border-color: #38bdf8; box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
+      50% { border-color: #94a3b8; box-shadow: 0 0 35px rgba(148, 163, 184, 0.8); }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-full font-sans antialiased flex flex-col selection:bg-blue-600 selection:text-white">
+
+  <!-- Navigation / Header -->
+  <header id="mainHeader" class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center">
+          <i class="fa-solid fa-headset text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            IT Remote Display
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">v2.4 Pro</span>
+          </h1>
+          <p class="text-xs text-slate-400">Fernwartungs- & Hinweisgenerator für Administratoren</p>
+        </div>
+      </div>
+
+      <!-- Header actions -->
+      <div class="flex items-center gap-2">
+        <button onclick="resetEditor()" class="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-right"></i> Zurücksetzen
+        </button>
+        <button onclick="startFullscreenDisplay()" class="px-4 py-2 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2 transform active:scale-95">
+          <i class="fa-solid fa-desktop"></i> Vollbild-Hinweis starten
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Editor Container (Hidden in Direct Standalone Mode) -->
+  <main id="editorLayout" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- Left Column: Controls & Configuration -->
+    <section class="lg:col-span-6 space-y-6">
+      
+      <!-- Quick Presets -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-bolt text-amber-400"></i> Schnellvorlagen (Presets)
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <button onclick="applyPreset('call')" class="p-3 text-left bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-red-500/50 rounded-xl transition-all group">
+            <div class="font-semibold text-xs text-red-400 group-hover:text-red-300 flex items-center gap-2">
+              <i class="fa-solid fa-phone-volume"></i> Bitte Support anrufen
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1 line-clamp-1">Dringender Hinweis auf Hotline-Melden</div>
+          </button>
+
+          <button onclick="applyPreset('finished')" class="p-3 text-left bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-blue-500/50 rounded-xl transition-all group">
+            <div class="font-semibold text-xs text-blue-400 group-hover:text-blue-300 flex items-center gap-2">
+              <i class="fa-solid fa-circle-check"></i> Wartung Abgeschlossen
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1 line-clamp-1">Aufforderung zum Neustart</div>
+          </button>
+
+          <button onclick="applyPreset('paused')" class="p-3 text-left bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-amber-500/50 rounded-xl transition-all group">
+            <div class="font-semibold text-xs text-amber-400 group-hover:text-amber-300 flex items-center gap-2">
+              <i class="fa-solid fa-pause"></i> Fernwartung Pausiert
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1 line-clamp-1">PC Bitte nicht ausschalten</div>
+          </button>
+
+          <button onclick="applyPreset('security')" class="p-3 text-left bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 rounded-xl transition-all group">
+            <div class="font-semibold text-xs text-emerald-400 group-hover:text-emerald-300 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved"></i> Sicherheits-Update
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1 line-clamp-1">System-Patches eingespielt</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Input Controls -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-blue-400"></i> Hinweis-Inhalt
+        </h2>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Hauptüberschrift</label>
+          <input type="text" id="inputTitle" oninput="updateState()" placeholder="z.B. BITTE BEIM IT-SUPPORT MELDEN!"
+            class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition-all">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Kontakt / Telefonnummer</label>
+            <input type="text" id="inputPhone" oninput="updateState()" placeholder="z.B. Tel: 01234 / 567 890 (Ext. 44)"
+              class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition-all">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Bearbeiter / IT-Techniker</label>
+            <input type="text" id="inputAgent" oninput="updateState()" placeholder="z.B. IT-Helpdesk / Max Mustermann"
+              class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition-all">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Zusatztext / Anweisungen</label>
+          <textarea id="inputText" oninput="updateState()" rows="3" placeholder="Geben Sie hier nähere Informationen oder Handlungsanweisungen für den Anwender ein..."
+            class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition-all resize-none"></textarea>
+        </div>
+      </div>
+
+      <!-- Theme & Styling Controls -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
+          <i class="fa-solid fa-palette text-purple-400"></i> Erscheinungsbild & Theme
+        </h2>
+
+        <!-- Theme selector buttons -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-2">Farbschema / Farbdringlichkeit</label>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <button onclick="setTheme('danger')" id="themeBtn-danger" class="p-2.5 rounded-xl border border-red-500/30 bg-red-950/40 text-red-200 text-xs font-semibold text-center hover:bg-red-900/50 transition-all flex flex-col items-center gap-1">
+              <span class="w-4 h-4 rounded-full bg-red-600 border border-white"></span>
+              Dringend
+            </button>
+            <button onclick="setTheme('warning')" id="themeBtn-warning" class="p-2.5 rounded-xl border border-amber-500/30 bg-amber-950/40 text-amber-200 text-xs font-semibold text-center hover:bg-amber-900/50 transition-all flex flex-col items-center gap-1">
+              <span class="w-4 h-4 rounded-full bg-amber-400 border border-slate-900"></span>
+              Warnung
+            </button>
+            <button onclick="setTheme('info')" id="themeBtn-info" class="p-2.5 rounded-xl border border-blue-500/30 bg-blue-950/40 text-blue-200 text-xs font-semibold text-center hover:bg-blue-900/50 transition-all flex flex-col items-center gap-1">
+              <span class="w-4 h-4 rounded-full bg-blue-600 border border-white"></span>
+              IT-Info
+            </button>
+            <button onclick="setTheme('neon')" id="themeBtn-neon" class="p-2.5 rounded-xl border border-emerald-500/30 bg-slate-950 text-emerald-400 text-xs font-semibold text-center hover:bg-slate-900 transition-all flex flex-col items-center gap-1">
+              <span class="w-4 h-4 rounded-full bg-emerald-500 border border-emerald-200"></span>
+              Neon Dark
+            </button>
+            <button onclick="setTheme('slate')" id="themeBtn-slate" class="p-2.5 rounded-xl border border-slate-600/30 bg-slate-800 text-slate-200 text-xs font-semibold text-center hover:bg-slate-700 transition-all flex flex-col items-center gap-1 col-span-2 sm:col-span-1">
+              <span class="w-4 h-4 rounded-full bg-slate-700 border border-sky-400"></span>
+              Modern
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Toggles -->
+        <div class="pt-2 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="flex items-center justify-between cursor-pointer p-2.5 bg-slate-950/60 rounded-xl border border-slate-800">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-border-top-left text-amber-400 text-xs"></i>
+              <span class="text-xs font-medium text-slate-300">Pulsierender Rahmen</span>
+            </div>
+            <input type="checkbox" id="toggleBorder" onchange="updateState()" class="sr-only peer" checked>
+            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 relative"></div>
+          </label>
+
+          <label class="flex items-center justify-between cursor-pointer p-2.5 bg-slate-950/60 rounded-xl border border-slate-800">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-clock text-blue-400 text-xs"></i>
+              <span class="text-xs font-medium text-slate-300">Zeitstempel anzeigen</span>
+            </div>
+            <input type="checkbox" id="toggleTimestamp" onchange="updateState()" class="sr-only peer" checked>
+            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600 relative"></div>
+          </label>
+        </div>
+
+        <!-- Font Size Scale Slider -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-semibold text-slate-300">Schriftgrößen-Skalierung</label>
+            <span id="fontSizeLabel" class="text-[11px] font-mono text-slate-400">100%</span>
+          </div>
+          <input type="range" id="fontSizeScale" min="80" max="140" value="100" step="5" oninput="updateState()"
+            class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+        </div>
+      </div>
+
+      <!-- URL Direct Link & Local Storage Section -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center justify-between">
+          <span class="flex items-center gap-2"><i class="fa-solid fa-link text-emerald-400"></i> Remote Direkt-Link (Sofort-Vollbild)</span>
+        </h2>
+        <p class="text-xs text-slate-400">
+          Diesen Link auf dem Ziel-Rechner öffnen – zeigt den Hinweis direkt ohne Editor im Vollbild an:
+        </p>
+        
+        <div class="flex gap-2">
+          <input type="text" id="directUrlInput" readonly onclick="this.select()"
+            class="flex-1 bg-slate-950 border border-slate-800 text-slate-300 rounded-xl px-3 py-2 text-xs font-mono select-all outline-none">
+          <button onclick="copyDirectUrl()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 shadow-lg shadow-emerald-600/20">
+            <i class="fa-solid fa-copy"></i> Kopieren
+          </button>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-400">Eigene Kontaktdaten als Standard speichern:</span>
+          <div class="flex gap-2">
+            <button onclick="saveCustomTemplate()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1">
+              <i class="fa-solid fa-bookmark text-amber-400"></i> Speichern
+            </button>
+            <button onclick="loadCustomTemplate()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1">
+              <i class="fa-solid fa-folder-open text-blue-400"></i> Laden
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Column: Realtime Live Preview -->
+    <section class="lg:col-span-6 flex flex-col">
+      <div class="sticky top-20 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-eye text-sky-400"></i> Live-Vorschau (Remote-Ansicht)
+          </h2>
+          <span class="text-xs text-slate-500 flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live synchronisiert
+          </span>
+        </div>
+
+        <!-- Preview Screen Frame (Simulated Display Monitor) -->
+        <div class="flex-1 bg-slate-950 border-2 border-slate-800 rounded-2xl p-3 shadow-2xl flex flex-col overflow-hidden min-h-[460px]">
+          <!-- Top Monitor Bar -->
+          <div class="bg-slate-900 px-3 py-1.5 rounded-t-xl border-b border-slate-800 flex items-center justify-between mb-2 text-xs text-slate-400">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+              <span class="font-mono text-[11px] ml-2 text-slate-500">REMOTE_DISPLAY_SESSION_01</span>
+            </div>
+            <span class="text-[11px] font-mono text-slate-500">1920 x 1080 (Skaliert)</span>
+          </div>
+
+          <!-- Interactive Live Display Box -->
+          <div id="previewCard" class="flex-1 rounded-xl p-6 flex flex-col justify-between items-center text-center transition-all duration-300 relative overflow-hidden shadow-inner">
+            <!-- Content render target -->
+            <div id="previewContent" class="w-full h-full flex flex-col justify-between items-center py-4">
+              <!-- Dynamically rendered -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Launch Remote Button -->
+        <div class="mt-4">
+          <button onclick="startFullscreenDisplay()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-xl shadow-blue-600/25 transition-all text-sm flex items-center justify-center gap-2 transform active:scale-[0.99]">
+            <i class="fa-solid fa-expand text-base"></i> Jetzt Vollbild-Hinweis auf diesem Rechner starten
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Standalone / Fullscreen Display Screen (Hidden by default, shown in Remote/Full Mode) -->
+  <div id="fullscreenDisplay" class="fixed inset-0 z-50 hidden flex-col justify-between p-8 sm:p-12 lg:p-16 transition-all duration-300 select-none">
+    
+    <!-- Top Bar with subtle control -->
+    <div class="flex justify-between items-start w-full relative z-20">
+      <div class="flex items-center gap-3 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+        <i class="fa-solid fa-circle-info text-xl animate-pulse"></i>
+        <span class="text-sm font-bold tracking-wide uppercase">IT-SUPPORT HINWEISMODUS</span>
+      </div>
+
+      <!-- Subtle Close Button for IT Admin -->
+      <button onclick="exitFullscreenDisplay()" title="Vollbild beenden (ESC)" class="bg-black/40 hover:bg-black/80 text-white/70 hover:text-white px-4 py-2 rounded-full border border-white/20 backdrop-blur-md text-xs font-semibold transition-all flex items-center gap-2 group">
+        <span>Beenden</span>
+        <kbd class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-mono group-hover:bg-white/30">ESC</kbd>
+      </button>
+    </div>
+
+    <!-- Center Maximized Typography Content -->
+    <div id="fullscreenContent" class="my-auto w-full max-w-6xl mx-auto flex flex-col items-center justify-center text-center px-4 py-6">
+      <!-- Generated content goes here -->
+    </div>
+
+    <!-- Bottom Info Bar -->
+    <div class="w-full flex flex-col sm:flex-row items-center justify-between text-xs opacity-80 gap-2 border-t border-current/20 pt-4 relative z-20">
+      <div id="fullscreenAgent" class="font-semibold flex items-center gap-2">
+        <i class="fa-solid fa-user-shield"></i> <span>IT-Techniker: -</span>
+      </div>
+      <div id="fullscreenTimestamp" class="font-mono flex items-center gap-2">
+        <i class="fa-solid fa-clock"></i> <span>Erstellt: -</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Modal for Saving Templates -->
+  <div id="saveModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-bookmark text-amber-400"></i> Vorlage Speichern
+        </h3>
+        <button onclick="closeSaveModal()" class="text-slate-400 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-400">Geben Sie einen Namen für diese Vorlage ein (z.B. "Standard Hotline" oder "Notfall Kontaktdaten"):</p>
+      <input type="text" id="templateNameInput" placeholder="Vorlagen-Name..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white outline-none focus:border-blue-500">
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeSaveModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold">Abbrechen</button>
+        <button onclick="confirmSaveTemplate()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Bar -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-medium pointer-events-none">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+    <span id="toastMessage">Aktion erfolgreich</span>
+  </div>
+
+  <script>
+    /* Global Application State */
+    const state = {
+      title: "BITTE BEIM IT-SUPPORT MELDEN!",
+      phone: "Telefon: 0800 / 123 4567 | Interne Durchwahl: 4321",
+      agent: "IT Helpdesk & Systemadministration",
+      text: "Auf Ihrem System wird derzeit eine Wartung vorbereitet oder ein wichtiger Vorgang durchgeführt. Bitte nehmen Sie kurz telefonischen Kontakt mit uns auf.",
+      theme: "danger", // 'danger' | 'warning' | 'info' | 'neon' | 'slate'
+      border: true,
+      timestamp: true,
+      fontSizeScale: 100,
+      customDateStr: ""
+    };
+
+    /* Preset Data Configurations */
+    const PRESETS = {
+      call: {
+        title: "BITTE BEIM IT-SUPPORT MELDEN!",
+        phone: "Telefon: 0800 / 123 4567 | Durchwahl: 4321",
+        agent: "IT-Helpdesk / Systembetreuung",
+        text: "Ein Administrator schaltet sich derzeit remote auf Ihr System auf. Bitte nehmen Sie vor der Weiterarbeit kurz telefonischen Kontakt mit dem Support auf.",
+        theme: "danger",
+        border: true
+      },
+      finished: {
+        title: "WARTUNG ERFOLGREICH ABGESCHLOSSEN",
+        phone: "IT-Support Hotmail: Ext. 4321",
+        agent: "IT Infrastructure Support",
+        text: "Die geplanten Wartungsarbeiten an Ihrem Rechner wurden beendet. Bitte führen Sie jetzt einen Neustart des Computers durch.",
+        theme: "info",
+        border: false
+      },
+      paused: {
+        title: "FERNWARTUNG PAUSIERT - PC NICHT AUSSCHALTEN!",
+        phone: "Support-Telefon: 0800 / 123 4567",
+        agent: "IT Operations Team",
+        text: "Die Aktualisierung wird in Kürze fortgesetzt. Bitte lassen Sie Ihren Computer eingeschaltet und melden Sie sich nicht ab.",
+        theme: "warning",
+        border: true
+      },
+      security: {
+        title: "SICHERHEITSAKTUALISIERUNG DURCHGEFÜHRT",
+        phone: "IT Security Line: 0800 / 999 888",
+        agent: "IT Security Department",
+        text: "Wichtige Sicherheits-Patches wurden auf diesem System installiert. Ihr Arbeitsplatz ist nach einer kurzen Anmeldung wieder voll einsatzbereit.",
+        theme: "neon",
+        border: false
+      }
+    };
+
+    /* Initialize Application on Page Load */
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. Check URL parameters for direct link / remote mode
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      if (urlParams.has('title')) state.title = urlParams.get('title');
+      if (urlParams.has('phone')) state.phone = urlParams.get('phone');
+      if (urlParams.has('agent')) state.agent = urlParams.get('agent');
+      if (urlParams.has('text')) state.text = urlParams.get('text');
+      if (urlParams.has('theme')) state.theme = urlParams.get('theme');
+      if (urlParams.has('border')) state.border = urlParams.get('border') === 'true';
+      if (urlParams.has('timestamp')) state.timestamp = urlParams.get('timestamp') === 'true';
+      if (urlParams.has('scale')) state.fontSizeScale = parseInt(urlParams.get('scale')) || 100;
+
+      // Generate current formatted German timestamp
+      state.customDateStr = getFormattedTimestamp();
+
+      // Sync form inputs with state
+      syncInputsFromState();
+
+      // Check if Direct Fullscreen Mode requested via URL parameter (?full=true or ?direct=true)
+      const isDirectMode = urlParams.get('full') === 'true' || urlParams.get('direct') === 'true';
+
+      if (isDirectMode) {
+        // Hide header and editor, open direct fullscreen overlay
+        document.getElementById('mainHeader').classList.add('hidden');
+        document.getElementById('editorLayout').classList.add('hidden');
+        renderFullscreenView();
+        document.getElementById('fullscreenDisplay').classList.remove('hidden');
+        document.getElementById('fullscreenDisplay').classList.add('flex');
+        applyThemeToElement(document.getElementById('fullscreenDisplay'), state.theme, state.border);
+      } else {
+        // Normal Editor Mode
+        updateAllViews();
+      }
+
+      // Keyboard Listener for ESC key
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          exitFullscreenDisplay();
+        }
+      });
+    });
+
+    function getFormattedTimestamp() {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      return `${day}.${month}.${year} um ${hours}:${minutes} Uhr`;
+    }
+
+    function syncInputsFromState() {
+      document.getElementById('inputTitle').value = state.title;
+      document.getElementById('inputPhone').value = state.phone;
+      document.getElementById('inputAgent').value = state.agent;
+      document.getElementById('inputText').value = state.text;
+      document.getElementById('toggleBorder').checked = state.border;
+      document.getElementById('toggleTimestamp').checked = state.timestamp;
+      document.getElementById('fontSizeScale').value = state.fontSizeScale;
+      document.getElementById('fontSizeLabel').innerText = state.fontSizeScale + '%';
+    }
+
+    function updateState() {
+      state.title = document.getElementById('inputTitle').value || 'HINWEIS';
+      state.phone = document.getElementById('inputPhone').value;
+      state.agent = document.getElementById('inputAgent').value;
+      state.text = document.getElementById('inputText').value;
+      state.border = document.getElementById('toggleBorder').checked;
+      state.timestamp = document.getElementById('toggleTimestamp').checked;
+      state.fontSizeScale = parseInt(document.getElementById('fontSizeScale').value) || 100;
+      document.getElementById('fontSizeLabel').innerText = state.fontSizeScale + '%';
+
+      updateAllViews();
+    }
+
+    function setTheme(themeKey) {
+      state.theme = themeKey;
+      updateAllViews();
+    }
+
+    function updateAllViews() {
+      highlightActiveThemeButton();
+      renderLivePreview();
+      renderFullscreenView();
+      generateDirectUrl();
+    }
+
+    function highlightActiveThemeButton() {
+      const themes = ['danger', 'warning', 'info', 'neon', 'slate'];
+      themes.forEach(t => {
+        const btn = document.getElementById(`themeBtn-${t}`);
+        if (btn) {
+          if (t === state.theme) {
+            btn.classList.add('ring-2', 'ring-blue-500', 'border-blue-400', 'scale-105');
+          } else {
+            btn.classList.remove('ring-2', 'ring-blue-500', 'border-blue-400', 'scale-105');
+          }
+        }
+      });
+    }
+
+    function applyThemeToElement(element, theme, hasBorder) {
+      // Remove all theme classes first
+      element.className = element.className.replace(/\btheme-\S+/g, '').trim();
+
+      // Apply primary background theme
+      element.classList.add(`theme-${theme}`);
+
+      // Apply pulsing border if toggled
+      if (hasBorder) {
+        element.classList.add(`theme-${theme}-border`);
+      }
+    }
+
+    function renderLivePreview() {
+      const card = document.getElementById('previewCard');
+      const content = document.getElementById('previewContent');
+      
+      applyThemeToElement(card, state.theme, state.border);
+
+      const scaleRatio = state.fontSizeScale / 100;
+
+      content.innerHTML = `
+        <div class="my-auto space-y-3 px-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/25 border border-current/20 text-[11px] font-bold tracking-wider uppercase mb-1">
+            <i class="fa-solid fa-triangle-exclamation"></i> IT-Fernwartung
+          </div>
+          
+          <h2 class="font-extrabold tracking-tight uppercase leading-tight drop-shadow-md" style="font-size: ${Math.max(1.1, 1.6 * scaleRatio)}rem;">
+            ${escapeHtml(state.title)}
+          </h2>
+
+          ${state.phone ? `
+            <div class="py-2 px-4 rounded-xl bg-black/30 border border-current/20 font-bold tracking-wide inline-block drop-shadow" style="font-size: ${Math.max(0.9, 1.25 * scaleRatio)}rem;">
+              <i class="fa-solid fa-phone mr-2"></i>${escapeHtml(state.phone)}
+            </div>
+          ` : ''}
+
+          ${state.text ? `
+            <p class="max-w-md mx-auto opacity-90 leading-relaxed font-medium" style="font-size: ${Math.max(0.75, 0.9 * scaleRatio)}rem;">
+              ${escapeHtml(state.text)}
+            </p>
+          ` : ''}
+        </div>
+
+        <div class="w-full flex justify-between items-center text-[10px] opacity-75 border-t border-current/20 pt-2.5 mt-2">
+          <span><i class="fa-solid fa-user-gear mr-1"></i> ${escapeHtml(state.agent || 'IT Support')}</span>
+          ${state.timestamp ? `<span><i class="fa-solid fa-clock mr-1"></i> ${state.customDateStr}</span>` : ''}
+        </div>
+      `;
+    }
+
+    function renderFullscreenView() {
+      const display = document.getElementById('fullscreenDisplay');
+      const content = document.getElementById('fullscreenContent');
+      
+      applyThemeToElement(display, state.theme, state.border);
+
+      const scaleRatio = state.fontSizeScale / 100;
+
+      content.innerHTML = `
+        <div class="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-black/30 border border-white/20 text-sm font-extrabold tracking-widest uppercase mb-6 shadow-lg">
+          <i class="fa-solid fa-shield-cat text-lg"></i> Wichtige IT-Mitteilung
+        </div>
+
+        <h1 class="font-black uppercase tracking-tight leading-none mb-8 drop-shadow-2xl" style="font-size: clamp(2.5rem, ${6 * scaleRatio}vw, 6rem);">
+          ${escapeHtml(state.title)}
+        </h1>
+
+        ${state.phone ? `
+          <div class="my-6 py-4 px-8 rounded-2xl bg-black/40 border-2 border-white/30 font-black tracking-wider shadow-2xl inline-flex items-center gap-4" style="font-size: clamp(1.5rem, ${3.5 * scaleRatio}vw, 3.5rem);">
+            <i class="fa-solid fa-phone-volume text-amber-300 animate-bounce"></i>
+            <span>${escapeHtml(state.phone)}</span>
+          </div>
+        ` : ''}
+
+        ${state.text ? `
+          <p class="max-w-4xl my-4 opacity-95 leading-relaxed font-semibold text-center drop-shadow" style="font-size: clamp(1.1rem, ${2 * scaleRatio}vw, 2.2rem);">
+            ${escapeHtml(state.text)}
+          </p>
+        ` : ''}
+      `;
+
+      // Update footer metadata
+      document.getElementById('fullscreenAgent').innerHTML = `<i class="fa-solid fa-user-shield"></i> Techniker: ${escapeHtml(state.agent || 'IT Support')}`;
+      if (state.timestamp) {
+        document.getElementById('fullscreenTimestamp').classList.remove('hidden');
+        document.getElementById('fullscreenTimestamp').innerHTML = `<i class="fa-solid fa-clock"></i> Erstellt: ${state.customDateStr}`;
+      } else {
+        document.getElementById('fullscreenTimestamp').classList.add('hidden');
+      }
+    }
+
+    function generateDirectUrl() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const params = new URLSearchParams();
+      
+      params.set('title', state.title);
+      if (state.phone) params.set('phone', state.phone);
+      if (state.agent) params.set('agent', state.agent);
+      if (state.text) params.set('text', state.text);
+      params.set('theme', state.theme);
+      params.set('border', state.border);
+      params.set('timestamp', state.timestamp);
+      params.set('scale', state.fontSizeScale);
+      params.set('full', 'true'); // Auto-trigger fullscreen on target PC
+
+      const finalUrl = `${baseUrl}?${params.toString()}`;
+      document.getElementById('directUrlInput').value = finalUrl;
+    }
+
+    function copyDirectUrl() {
+      const urlInput = document.getElementById('directUrlInput');
+      urlInput.select();
+      
+      // Fallback copy execution for iFrame / strict browser environments
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('Direkt-Link in Zwischenablage kopiert!', 'success');
+        } else {
+          throw new Error('Copy command failed');
+        }
+      } catch (err) {
+        navigator.clipboard.writeText(urlInput.value).then(() => {
+          showToast('Direkt-Link in Zwischenablage kopiert!', 'success');
+        }).catch(() => {
+          showToast('Kopieren fehlgeschlagen. Bitte manuell kopieren.', 'error');
+        });
+      }
+    }
+
+    function applyPreset(presetKey) {
+      const preset = PRESETS[presetKey];
+      if (!preset) return;
+
+      state.title = preset.title;
+      state.phone = preset.phone;
+      state.agent = preset.agent;
+      state.text = preset.text;
+      state.theme = preset.theme;
+      state.border = preset.border;
+
+      syncInputsFromState();
+      updateAllViews();
+      showToast(`Vorlage "${preset.title.substring(0, 20)}..." geladen`, 'info');
+    }
+
+    function startFullscreenDisplay() {
+      renderFullscreenView();
+      const fsElem = document.getElementById('fullscreenDisplay');
+      fsElem.classList.remove('hidden');
+      fsElem.classList.add('flex');
+
+      // Request browser standard full screen if available
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }
+
+    function exitFullscreenDisplay() {
+      const fsElem = document.getElementById('fullscreenDisplay');
+      fsElem.classList.add('hidden');
+      fsElem.classList.remove('flex');
+
+      // Exit standard browser full screen if active
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function resetEditor() {
+      applyPreset('call');
+    }
+
+    // LocalStorage Saved Templates Management
+    function saveCustomTemplate() {
+      document.getElementById('saveModal').classList.remove('hidden');
+      document.getElementById('templateNameInput').focus();
+    }
+
+    function closeSaveModal() {
+      document.getElementById('saveModal').classList.add('hidden');
+    }
+
+    function confirmSaveTemplate() {
+      const nameInput = document.getElementById('templateNameInput').value.trim();
+      if (!nameInput) {
+        showToast('Bitte geben Sie einen Namen ein.', 'error');
+        return;
+      }
+
+      const templates = JSON.parse(localStorage.getItem('it_display_templates') || '{}');
+      templates[nameInput] = {
+        title: state.title,
+        phone: state.phone,
+        agent: state.agent,
+        text: state.text,
+        theme: state.theme,
+        border: state.border,
+        fontSizeScale: state.fontSizeScale
+      };
+
+      localStorage.setItem('it_display_templates', JSON.stringify(templates));
+      closeSaveModal();
+      document.getElementById('templateNameInput').value = '';
+      showToast(`Vorlage "${nameInput}" erfolgreich gespeichert!`, 'success');
+    }
+
+    function loadCustomTemplate() {
+      const templates = JSON.parse(localStorage.getItem('it_display_templates') || '{}');
+      const keys = Object.keys(templates);
+
+      if (keys.length === 0) {
+        showToast('Keine gespeicherten Vorlagen vorhanden.', 'error');
+        return;
+      }
+
+      // Simple select prompt logic
+      const selectedKey = prompt(`Geben Sie den Namen der zu ladenden Vorlage ein:\n\nVerfügbar:\n${keys.map(k => '• ' + k).join('\n')}`);
+      if (selectedKey && templates[selectedKey]) {
+        const t = templates[selectedKey];
+        state.title = t.title;
+        state.phone = t.phone;
+        state.agent = t.agent;
+        state.text = t.text;
+        state.theme = t.theme;
+        state.border = t.border;
+        state.fontSizeScale = t.fontSizeScale || 100;
+
+        syncInputsFromState();
+        updateAllViews();
+        showToast(`Eigene Vorlage "${selectedKey}" geladen.`, 'success');
+      } else if (selectedKey) {
+        showToast('Vorlage nicht gefunden.', 'error');
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = msg;
+
+      if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400 text-base';
+      } else if (type === 'info') {
+        toastIcon.className = 'fa-solid fa-circle-info text-blue-400 text-base';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
